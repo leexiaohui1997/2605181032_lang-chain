@@ -3,7 +3,7 @@ import * as z from 'zod'
 
 import { model } from '../libs/model.js'
 
-const getWeather = tool(
+export const getWeather = tool(
   ({ city }) => {
     return `今天${city}天气晴朗，温度25度`
   },
