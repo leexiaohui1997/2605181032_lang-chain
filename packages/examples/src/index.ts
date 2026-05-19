@@ -15,14 +15,28 @@ await Promise.all(
     .map(async (file) => {
       const filePath = pathToFileURL(resolve(EXAMPLES_DIR, file)).href
       const module = await import(filePath)
+      const commandName = module.name || file.replace(/\.(ts|js)$/, '')
+      const commandDesc = module.description || `Run ${commandName} example`
+      const command = program.command(commandName).description(commandDesc)
+      if (typeof module.prepare === 'function') {
+        module.prepare(command)
+      }
+
       if (typeof module.main === 'function') {
-        const commandName = module.name || file.replace(/\.(ts|js)$/, '')
-        const commandDesc = module.description || `Run ${commandName} example`
-        const command = program.command(commandName).description(commandDesc)
-        if (typeof module.prepare === 'function') {
-          module.prepare(command)
-        }
         command.action(module.main)
+      }
+
+      for (const key in module) {
+        if (key.endsWith('Example') && typeof module[key] === 'function') {
+          const subCommandName = key
+            .replace(/Example$/, '')
+            .replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
+            .toLowerCase()
+          command
+            .command(subCommandName)
+            .description(`Run ${subCommandName} example`)
+            .action(module[key])
+        }
       }
     }),
 )
